@@ -1,0 +1,2 @@
+#define GEOMETRY3DDLL_API __declspec(dllexport)
+#define GEOMETRY3DDLL_API __declspec(dllimport)
