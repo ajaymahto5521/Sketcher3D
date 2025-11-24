@@ -1,45 +1,73 @@
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <string>
+
 #include "Point.h"
 #include "Cuboid.h"
 
-int main() {
-    // Create a cuboid with origin (0,0,0), length=5 (Y), width=4 (X), height=3 (Z)
-    Cuboid box(0.0, 0.0, 0.0, 5.0, 4.0, 3.0);
-
-    // (Optional) still dump raw 8 vertices if you like
-    box.saveToDat("cuboid.dat");
-
-    // Now write edges as 18 points for gnuplot (with blank lines between segments)
-    const auto& V = box.getVertices(); // indices: 0..3 bottom, 4..7 top (as per your Cuboid::computeVertices)
-
-    std::ofstream f("cuboid.dat");
-    if (!f.is_open()) {
-        std::cerr << "Failed to open cuboid.dat\n";
-        return 1;
+// Writes 18 points: bottom loop (5), top loop (5), 4 verticals (8)
+bool writeEdges18(const Cuboid& c, const std::string& filename) {
+    const std::vector<Point>& v = c.getVertices();
+    if (v.size() != 8) {
+        std::cerr << "Error: Cuboid does not have 8 vertices.\n";
+        return false;
     }
 
-    auto write = [&](int i) {
-        const auto& p = V[i];
-        f << p.X() << " " << p.Y() << " " << p.Z() << "\n";
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Error: Cannot open file: " << filename << "\n";
+        return false;
+    }
+
+    auto emit = [&](int idx) {
+        file << v[idx].X() << " " << v[idx].Y() << " " << v[idx].Z() << "\n";
         };
 
-    // Bottom loop (5 points, closing)
-    write(0); write(1); write(2); write(3); write(0);
-    f << "\n\n";
+    // Bottom face loop: 0 -> 1 -> 2 -> 3 -> 0  (5 points)
+    emit(0); emit(1); emit(2); emit(3); emit(0);
+    file << "\n";
 
-    // Top loop (5 points, closing)
-    write(4); write(5); write(6); write(7); write(4);
-    f << "\n\n";
+    // Top face loop: 4 -> 5 -> 6 -> 7 -> 4  (5 points)
+    emit(4); emit(5); emit(6); emit(7); emit(4);
+    file << "\n";
 
-    // Vertical edges (4 segments, 2 points each)
-    write(0); write(4); f << "\n\n";
-    write(1); write(5); f << "\n\n";
-    write(2); write(6); f << "\n\n";
-    write(3); write(7); f << "\n";
+    // Vertical edges: (0-4), (1-5), (2-6), (3-7)  (8 points total)
+    emit(0); emit(4);
+    emit(1); emit(5);
+    emit(2); emit(6);
+    emit(3); emit(7);
 
-    f.close();
+    file.close();
+    return true;
+}
 
-    std::cout << "Generated cuboid.dat with 18 points for gnuplot.\n";
-    return 0;
+int main() {
+    try {
+        // A cube: origin (0,0,0), side = 10
+        Cuboid cube(0.0, 0.0, 0.0, 10.0, 10.0, 10.0);
+
+        // A cuboid: origin (20,5,0), L (Y) = 15, W (X) = 25, H (Z) = 8
+        Cuboid cuboid(20.0, 5.0, 0.0, 15.0, 25.0, 8.0);
+
+        const std::string cubeFile = "cube_edges.dat";
+        const std::string cuboidFile = "cuboid_edges.dat";
+
+        bool ok1 = writeEdges18(cube, cubeFile);
+        bool ok2 = writeEdges18(cuboid, cuboidFile);
+
+        if (ok1 && ok2) {
+            std::cout << "Wrote 18 points to " << cubeFile
+                << " and " << cuboidFile << " successfully.\n";
+            return 0;
+        }
+        else {
+            std::cerr << "Failed to write one or more files.\n";
+            return 1;
+        }
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Exception: " << e.what() << "\n";
+        return 1;
+    }
 }
