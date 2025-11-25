@@ -4,7 +4,13 @@
 #include <string>
 
 #include "Point.h"
+#include "Shape.h"
+#include "Cube.h"
 #include "Cuboid.h"
+#include "Pyramid.h"
+#include "Sphere.h"
+#include "Cylinder.h"
+#include "Cone.h"
 
 // Writes 18 points: bottom loop (5), top loop (5), 4 verticals (8)
 bool writeEdges18(const Cuboid& c, const std::string& filename) {
@@ -38,31 +44,39 @@ bool writeEdges18(const Cuboid& c, const std::string& filename) {
     emit(2); emit(6);
     emit(3); emit(7);
 
-    file.close();
     return true;
 }
 
 int main() {
     try {
-        // A cube: origin (0,0,0), side = 10
+        // Cube & Cuboid
         Cuboid cube(0.0, 0.0, 0.0, 10.0, 10.0, 10.0);
-
-        // A cuboid: origin (20,5,0), L (Y) = 15, W (X) = 25, H (Z) = 8
         Cuboid cuboid(20.0, 5.0, 0.0, 15.0, 25.0, 8.0);
 
-        const std::string cubeFile = "cube_edges.dat";
-        const std::string cuboidFile = "cuboid_edges.dat";
+        // Other shapes
+        Pyramid pyramid(50.0, 0.0, 0.0, 20.0, 20.0, 15.0);       // base 20x20, height 15
+        Sphere sphere(0.0, 40.0, 0.0, 8.0, 16, 24);             // center at (0,40,0)
+        Cylinder cylinder(40.0, 40.0, 0.0, 6.0, 15.0, 32, 4);   // stacks=4 rings
+        Cone cone(80.0, 0.0, 0.0, 8.0, 18.0, 32, 3);            // stacks=3 rings
 
-        bool ok1 = writeEdges18(cube, cubeFile);
-        bool ok2 = writeEdges18(cuboid, cuboidFile);
+        // Save simple vertex clouds (x y z per line)
+        if (!cube.saveToDat("cube_vertices.dat"))       std::cerr << "Failed: cube_vertices.dat\n";
+        if (!cuboid.saveToDat("cuboid_vertices.dat"))   std::cerr << "Failed: cuboid_vertices.dat\n";
+        if (!pyramid.saveToDat("pyramid_vertices.dat")) std::cerr << "Failed: pyramid_vertices.dat\n";
+        if (!sphere.saveToDat("sphere_vertices.dat"))   std::cerr << "Failed: sphere_vertices.dat\n";
+        if (!cylinder.saveToDat("cylinder_vertices.dat")) std::cerr << "Failed: cylinder_vertices.dat\n";
+        if (!cone.saveToDat("cone_vertices.dat"))       std::cerr << "Failed: cone_vertices.dat\n";
+
+        // Optional: edge file with 18 points for cube & cuboid (good for gnuplot line plotting)
+        bool ok1 = writeEdges18(cube, "cube_edges.dat");
+        bool ok2 = writeEdges18(cuboid, "cuboid_edges.dat");
 
         if (ok1 && ok2) {
-            std::cout << "Wrote 18 points to " << cubeFile
-                << " and " << cuboidFile << " successfully.\n";
+            std::cout << "Wrote vertex clouds and edge files successfully.\n";
             return 0;
         }
         else {
-            std::cerr << "Failed to write one or more files.\n";
+            std::cerr << "Completed with some errors writing edge files.\n";
             return 1;
         }
     }
